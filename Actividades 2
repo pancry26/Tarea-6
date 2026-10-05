@@ -1,1 +1,224 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
+class Pedido {
+    private String nombrePlato;
+    private String tipo;
+
+    public Pedido(String nombrePlato, String tipo) {
+        this.nombrePlato = nombrePlato;
+        this.tipo = tipo;
+    }
+
+    public String getNombrePlato() {
+        return nombrePlato;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setNombrePlato(String nombrePlato) {
+        this.nombrePlato = nombrePlato;
+    }
+}
+
+class PedidoModelo {
+    private List<Pedido> pedidos = new ArrayList<>();
+
+    public void agregarPedido(Pedido pedido) {
+        pedidos.add(pedido);
+    }
+
+    public void eliminarPedido(int indice) {
+        if (indice >= 0 && indice < pedidos.size()) {
+            pedidos.remove(indice);
+        }
+    }
+
+    public void actualizarPedido(int indice, String nuevoNombre) {
+        if (indice >= 0 && indice < pedidos.size()) {
+            pedidos.get(indice).setNombrePlato(nuevoNombre);
+        }
+    }
+
+    public Pedido buscar(String texto) {
+        for (Pedido pedido : pedidos) {
+            if (pedido.getNombrePlato().equalsIgnoreCase(texto)
+                    || pedido.getTipo().equalsIgnoreCase(texto)) {
+                return pedido;
+            }
+        }
+        return null;
+    }
+
+    public List<Pedido> getPedidos() {
+        return pedidos;
+    }
+
+    public int contarTipo(String tipo) {
+        int contador = 0;
+
+        for (Pedido pedido : pedidos) {
+            if (pedido.getTipo().equalsIgnoreCase(tipo)) {
+                contador++;
+            }
+        }
+
+        return contador;
+    }
+}
+
+class PedidoVista {
+    private Scanner scanner = new Scanner(System.in);
+
+    public void mostrarMenu() {
+        System.out.println("\n===== GESTIÓN DE PEDIDOS =====");
+        System.out.println("1. Agregar pedido");
+        System.out.println("2. Mostrar pedidos");
+        System.out.println("3. Eliminar pedido");
+        System.out.println("4. Actualizar pedido");
+        System.out.println("5. Buscar pedido");
+        System.out.println("6. Contar pedidos");
+        System.out.println("7. Salir");
+    }
+
+    public String leer(String mensaje) {
+        System.out.print(mensaje);
+        return scanner.nextLine();
+    }
+
+    public int leerEntero(String mensaje) {
+        System.out.print(mensaje);
+        return Integer.parseInt(scanner.nextLine());
+    }
+
+    public void mostrarPedidos(List<Pedido> pedidos) {
+        if (pedidos.isEmpty()) {
+            System.out.println("No existen pedidos.");
+            return;
+        }
+
+        System.out.println("\nLISTA DE PEDIDOS");
+
+        for (int i = 0; i < pedidos.size(); i++) {
+            Pedido p = pedidos.get(i);
+            System.out.println((i + 1) + ". " + p.getNombrePlato()
+                    + " | Tipo: " + p.getTipo());
+        }
+    }
+
+    public void mensaje(String mensaje) {
+        System.out.println(mensaje);
+    }
+}
+
+class PedidoControlador {
+    private PedidoModelo modelo;
+    private PedidoVista vista;
+
+    public PedidoControlador(PedidoModelo modelo, PedidoVista vista) {
+        this.modelo = modelo;
+        this.vista = vista;
+    }
+
+    public void iniciar() {
+        String opcion;
+
+        do {
+            vista.mostrarMenu();
+            opcion = vista.leer("Seleccione una opción: ");
+
+            switch (opcion) {
+                case "1":
+                    agregar();
+                    break;
+                case "2":
+                    vista.mostrarPedidos(modelo.getPedidos());
+                    break;
+                case "3":
+                    eliminar();
+                    break;
+                case "4":
+                    actualizar();
+                    break;
+                case "5":
+                    buscar();
+                    break;
+                case "6":
+                    contar();
+                    break;
+                case "7":
+                    vista.mensaje("Saliendo...");
+                    break;
+                default:
+                    vista.mensaje("Opción no válida.");
+            }
+        } while (!opcion.equals("7"));
+    }
+
+    private void agregar() {
+        String nombre = vista.leer("Nombre del plato: ");
+        String tipo = vista.leer("Tipo de plato: ");
+
+        if (!nombre.isEmpty() && !tipo.isEmpty()) {
+            modelo.agregarPedido(new Pedido(nombre, tipo));
+            vista.mensaje("Pedido agregado.");
+        } else {
+            vista.mensaje("Los datos no pueden estar vacíos.");
+        }
+    }
+
+    private void eliminar() {
+        vista.mostrarPedidos(modelo.getPedidos());
+
+        if (!modelo.getPedidos().isEmpty()) {
+            int posicion = vista.leerEntero("Número del pedido a eliminar: ");
+            modelo.eliminarPedido(posicion - 1);
+            vista.mensaje("Pedido eliminado.");
+        }
+    }
+
+    private void actualizar() {
+        vista.mostrarPedidos(modelo.getPedidos());
+
+        if (!modelo.getPedidos().isEmpty()) {
+            int posicion = vista.leerEntero("Número del pedido: ");
+            String nuevoNombre = vista.leer("Nuevo nombre: ");
+
+            modelo.actualizarPedido(posicion - 1, nuevoNombre);
+            vista.mensaje("Pedido actualizado.");
+        }
+    }
+
+    private void buscar() {
+        String texto = vista.leer("Ingrese nombre o tipo: ");
+        Pedido pedido = modelo.buscar(texto);
+
+        if (pedido != null) {
+            vista.mensaje("Pedido encontrado: " + pedido.getNombrePlato()
+                    + " | Tipo: " + pedido.getTipo());
+        } else {
+            vista.mensaje("Pedido no encontrado.");
+        }
+    }
+
+    private void contar() {
+        vista.mensaje("Total de pedidos: " + modelo.getPedidos().size());
+
+        String tipo = vista.leer("Ingrese un tipo para contar: ");
+        vista.mensaje("Pedidos de tipo " + tipo + ": "
+                + modelo.contarTipo(tipo));
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        PedidoModelo modelo = new PedidoModelo();
+        PedidoVista vista = new PedidoVista();
+        PedidoControlador controlador = new PedidoControlador(modelo, vista);
+
+        controlador.iniciar();
+    }
+}
