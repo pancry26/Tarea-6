@@ -1,1 +1,318 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
 
+class Jugador {
+    private String nombre;
+    private int salud;
+    private int nivel;
+    private List<String> inventario;
+
+    public Jugador(String nombre, int salud, int nivel) {
+        this.nombre = nombre;
+        this.salud = salud;
+        this.nivel = nivel;
+        this.inventario = new ArrayList<>();
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public int getSalud() {
+        return salud;
+    }
+
+    public int getNivel() {
+        return nivel;
+    }
+
+    public List<String> getInventario() {
+        return inventario;
+    }
+
+    public void agregarObjeto(String objeto) {
+        inventario.add(objeto);
+    }
+
+    public int atacar() {
+        return nivel * 10;
+    }
+
+    public void recibirDanio(int danio) {
+        salud -= danio;
+
+        if (salud < 0) {
+            salud = 0;
+        }
+    }
+
+    public void usarObjeto() {
+        if (inventario.contains("Pocion")) {
+            salud += 30;
+            inventario.remove("Pocion");
+        }
+    }
+}
+
+class Enemigo {
+    private String nombre;
+    private int salud;
+    private int nivel;
+    private String tipo;
+
+    public Enemigo(String nombre, int salud, int nivel, String tipo) {
+        this.nombre = nombre;
+        this.salud = salud;
+        this.nivel = nivel;
+        this.tipo = tipo;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public int getSalud() {
+        return salud;
+    }
+
+    public int getNivel() {
+        return nivel;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public int atacar() {
+        return nivel * 8;
+    }
+
+    public void recibirDanio(int danio) {
+        salud -= danio;
+
+        if (salud < 0) {
+            salud = 0;
+        }
+    }
+}
+
+class CombateModelo {
+    private Jugador jugador;
+    private List<Enemigo> enemigos;
+    private Random random = new Random();
+
+    public CombateModelo(Jugador jugador) {
+        this.jugador = jugador;
+        enemigos = new ArrayList<>();
+    }
+
+    public void agregarEnemigo(Enemigo enemigo) {
+        enemigos.add(enemigo);
+    }
+
+    public Jugador getJugador() {
+        return jugador;
+    }
+
+    public List<Enemigo> getEnemigos() {
+        return enemigos;
+    }
+
+    public Enemigo getEnemigo(int indice) {
+        if (indice >= 0 && indice < enemigos.size()) {
+            return enemigos.get(indice);
+        }
+
+        return null;
+    }
+
+    public int turnoEnemigo() {
+        return random.nextInt(3);
+    }
+
+    public boolean jugadorVivo() {
+        return jugador.getSalud() > 0;
+    }
+}
+
+class CombateVista {
+    private Scanner scanner = new Scanner(System.in);
+
+    public void menu() {
+        System.out.println("\n===== COMBATE =====");
+        System.out.println("1. Mostrar estado");
+        System.out.println("2. Atacar enemigo");
+        System.out.println("3. Usar poción");
+        System.out.println("4. Salir");
+    }
+
+    public String leer(String mensaje) {
+        System.out.print(mensaje);
+        return scanner.nextLine();
+    }
+
+    public int entero(String mensaje) {
+        return Integer.parseInt(leer(mensaje));
+    }
+
+    public void mostrarEstado(Jugador jugador, List<Enemigo> enemigos) {
+        System.out.println("\nJUGADOR");
+        System.out.println("Nombre: " + jugador.getNombre());
+        System.out.println("Salud: " + jugador.getSalud());
+        System.out.println("Nivel: " + jugador.getNivel());
+        System.out.println("Inventario: " + jugador.getInventario());
+
+        System.out.println("\nENEMIGOS");
+
+        for (int i = 0; i < enemigos.size(); i++) {
+            Enemigo e = enemigos.get(i);
+
+            System.out.println((i + 1) + ". "
+                    + e.getNombre()
+                    + " | Salud: " + e.getSalud()
+                    + " | Nivel: " + e.getNivel()
+                    + " | Tipo: " + e.getTipo());
+        }
+    }
+
+    public void mensaje(String mensaje) {
+        System.out.println(mensaje);
+    }
+}
+
+class CombateControlador {
+    private CombateModelo modelo;
+    private CombateVista vista;
+
+    public CombateControlador(CombateModelo modelo, CombateVista vista) {
+        this.modelo = modelo;
+        this.vista = vista;
+    }
+
+    public void iniciar() {
+        String opcion;
+
+        do {
+            if (!modelo.jugadorVivo()) {
+                vista.mensaje("El jugador ha sido derrotado.");
+                break;
+            }
+
+            vista.menu();
+            opcion = vista.leer("Seleccione: ");
+
+            switch (opcion) {
+                case "1":
+                    vista.mostrarEstado(
+                            modelo.getJugador(),
+                            modelo.getEnemigos()
+                    );
+                    break;
+                case "2":
+                    atacar();
+                    break;
+                case "3":
+                    usarPocion();
+                    break;
+                case "4":
+                    vista.mensaje("Saliendo del combate...");
+                    break;
+                default:
+                    vista.mensaje("Opción no válida.");
+            }
+        } while (!opcion.equals("4"));
+    }
+
+    private void atacar() {
+        vista.mostrarEstado(
+                modelo.getJugador(),
+                modelo.getEnemigos()
+        );
+
+        int numero = vista.entero("Seleccione enemigo: ");
+        Enemigo enemigo = modelo.getEnemigo(numero - 1);
+
+        if (enemigo == null) {
+            vista.mensaje("Enemigo no válido.");
+            return;
+        }
+
+        int danio = modelo.getJugador().atacar();
+        enemigo.recibirDanio(danio);
+
+        vista.mensaje(
+                "El jugador atacó a "
+                        + enemigo.getNombre()
+                        + " causando "
+                        + danio
+                        + " de daño."
+        );
+
+        if (enemigo.getSalud() <= 0) {
+            vista.mensaje(enemigo.getNombre() + " fue derrotado.");
+            return;
+        }
+
+        turnoEnemigo(enemigo);
+    }
+
+    private void turnoEnemigo(Enemigo enemigo) {
+        int accion = modelo.turnoEnemigo();
+
+        if (accion == 0) {
+            int danio = enemigo.atacar();
+
+            modelo.getJugador().recibirDanio(danio);
+
+            vista.mensaje(
+                    enemigo.getNombre()
+                            + " atacó al jugador causando "
+                            + danio
+                            + " de daño."
+            );
+        } else {
+            vista.mensaje(
+                    enemigo.getNombre()
+                            + " decidió no atacar este turno."
+            );
+        }
+    }
+
+    private void usarPocion() {
+        int saludAntes = modelo.getJugador().getSalud();
+
+        modelo.getJugador().usarObjeto();
+
+        if (modelo.getJugador().getSalud() > saludAntes) {
+            vista.mensaje("Se utilizó una poción.");
+        } else {
+            vista.mensaje("No tienes pociones.");
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Jugador jugador = new Jugador("Heroe", 100, 5);
+        jugador.agregarObjeto("Pocion");
+        jugador.agregarObjeto("Pocion");
+
+        CombateModelo modelo = new CombateModelo(jugador);
+
+        modelo.agregarEnemigo(
+                new Enemigo("Goblin", 60, 3, "Guerrero")
+        );
+
+        modelo.agregarEnemigo(
+                new Enemigo("Orco", 100, 4, "Tanque")
+        );
+
+        CombateVista vista = new CombateVista();
+        CombateControlador controlador =
+                new CombateControlador(modelo, vista);
+
+        controlador.iniciar();
+    }
+}
