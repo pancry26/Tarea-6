@@ -1,1 +1,280 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
+class Producto {
+    private int id;
+    private String nombre;
+    private double precio;
+
+    public Producto(int id, String nombre, double precio) {
+        this.id = id;
+        this.nombre = nombre;
+        this.precio = precio;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public double getPrecio() {
+        return precio;
+    }
+
+    public String toString() {
+        return id + ". " + nombre + " - S/ " + precio;
+    }
+}
+
+class Compra {
+    private List<Producto> productos;
+    private double total;
+
+    public Compra(List<Producto> productos, double total) {
+        this.productos = new ArrayList<>(productos);
+        this.total = total;
+    }
+
+    public String toString() {
+        return "Compra: " + productos.size() + " productos | Total: S/ " + total;
+    }
+}
+
+class CarritoModelo {
+    private List<Producto> productos = new ArrayList<>();
+    private List<Producto> carrito = new ArrayList<>();
+    private List<Compra> historial = new ArrayList<>();
+
+    public void agregarProducto(Producto producto) {
+        productos.add(producto);
+    }
+
+    public List<Producto> getProductos() {
+        return productos;
+    }
+
+    public List<Producto> getCarrito() {
+        return carrito;
+    }
+
+    public List<Compra> getHistorial() {
+        return historial;
+    }
+
+    public Producto buscarProducto(int id) {
+        for (Producto p : productos) {
+            if (p.getId() == id) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public void agregarCarrito(Producto producto) {
+        carrito.add(producto);
+    }
+
+    public void eliminarCarrito(int posicion) {
+        if (posicion >= 0 && posicion < carrito.size()) {
+            carrito.remove(posicion);
+        }
+    }
+
+    public double subtotal() {
+        double total = 0;
+
+        for (Producto p : carrito) {
+            total += p.getPrecio();
+        }
+
+        return total;
+    }
+
+    public double descuento() {
+        return subtotal() >= 100 ? subtotal() * 0.10 : 0;
+    }
+
+    public double envio() {
+        if (carrito.isEmpty()) {
+            return 0;
+        }
+
+        return subtotal() >= 150 ? 0 : 10;
+    }
+
+    public double total() {
+        return subtotal() - descuento() + envio();
+    }
+
+    public void comprar() {
+        if (!carrito.isEmpty()) {
+            historial.add(new Compra(carrito, total()));
+            carrito.clear();
+        }
+    }
+}
+
+class CarritoVista {
+    private Scanner scanner = new Scanner(System.in);
+
+    public void menu() {
+        System.out.println("\n===== CARRITO DE COMPRAS =====");
+        System.out.println("1. Listar productos");
+        System.out.println("2. Agregar producto al carrito");
+        System.out.println("3. Ver carrito");
+        System.out.println("4. Eliminar producto del carrito");
+        System.out.println("5. Ver total");
+        System.out.println("6. Realizar compra");
+        System.out.println("7. Ver historial");
+        System.out.println("8. Salir");
+    }
+
+    public String leer(String mensaje) {
+        System.out.print(mensaje);
+        return scanner.nextLine();
+    }
+
+    public int entero(String mensaje) {
+        return Integer.parseInt(leer(mensaje));
+    }
+
+    public void mostrarProductos(List<Producto> productos) {
+        for (Producto p : productos) {
+            System.out.println(p);
+        }
+    }
+
+    public void mostrarCarrito(List<Producto> carrito) {
+        if (carrito.isEmpty()) {
+            System.out.println("El carrito está vacío.");
+            return;
+        }
+
+        for (int i = 0; i < carrito.size(); i++) {
+            System.out.println((i + 1) + ". " + carrito.get(i));
+        }
+    }
+
+    public void mensaje(String mensaje) {
+        System.out.println(mensaje);
+    }
+}
+
+class CarritoControlador {
+    private CarritoModelo modelo;
+    private CarritoVista vista;
+
+    public CarritoControlador(CarritoModelo modelo, CarritoVista vista) {
+        this.modelo = modelo;
+        this.vista = vista;
+    }
+
+    public void iniciar() {
+        modelo.agregarProducto(new Producto(1, "Laptop", 2500));
+        modelo.agregarProducto(new Producto(2, "Mouse", 80));
+        modelo.agregarProducto(new Producto(3, "Teclado", 150));
+        modelo.agregarProducto(new Producto(4, "Audífonos", 120));
+
+        String opcion;
+
+        do {
+            vista.menu();
+            opcion = vista.leer("Seleccione: ");
+
+            switch (opcion) {
+                case "1":
+                    vista.mostrarProductos(modelo.getProductos());
+                    break;
+                case "2":
+                    agregarCarrito();
+                    break;
+                case "3":
+                    vista.mostrarCarrito(modelo.getCarrito());
+                    break;
+                case "4":
+                    eliminarCarrito();
+                    break;
+                case "5":
+                    mostrarTotal();
+                    break;
+                case "6":
+                    comprar();
+                    break;
+                case "7":
+                    mostrarHistorial();
+                    break;
+                case "8":
+                    vista.mensaje("Saliendo...");
+                    break;
+                default:
+                    vista.mensaje("Opción no válida.");
+            }
+        } while (!opcion.equals("8"));
+    }
+
+    private void agregarCarrito() {
+        vista.mostrarProductos(modelo.getProductos());
+        int id = vista.entero("Ingrese ID del producto: ");
+
+        Producto producto = modelo.buscarProducto(id);
+
+        if (producto != null) {
+            modelo.agregarCarrito(producto);
+            vista.mensaje("Producto agregado.");
+        } else {
+            vista.mensaje("Producto no encontrado.");
+        }
+    }
+
+    private void eliminarCarrito() {
+        vista.mostrarCarrito(modelo.getCarrito());
+
+        if (!modelo.getCarrito().isEmpty()) {
+            int posicion = vista.entero("Producto a eliminar: ");
+            modelo.eliminarCarrito(posicion - 1);
+            vista.mensaje("Producto eliminado.");
+        }
+    }
+
+    private void mostrarTotal() {
+        vista.mensaje("Subtotal: S/ " + modelo.subtotal());
+        vista.mensaje("Descuento: S/ " + modelo.descuento());
+        vista.mensaje("Envío: S/ " + modelo.envio());
+        vista.mensaje("TOTAL: S/ " + modelo.total());
+    }
+
+    private void comprar() {
+        if (modelo.getCarrito().isEmpty()) {
+            vista.mensaje("El carrito está vacío.");
+        } else {
+            double total = modelo.total();
+            modelo.comprar();
+            vista.mensaje("Compra realizada. Total: S/ " + total);
+        }
+    }
+
+    private void mostrarHistorial() {
+        if (modelo.getHistorial().isEmpty()) {
+            vista.mensaje("No existen compras.");
+            return;
+        }
+
+        for (Compra compra : modelo.getHistorial()) {
+            vista.mensaje(compra.toString());
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        CarritoModelo modelo = new CarritoModelo();
+        CarritoVista vista = new CarritoVista();
+        CarritoControlador controlador = new CarritoControlador(modelo, vista);
+
+        controlador.iniciar();
+    }
+}
