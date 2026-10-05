@@ -1,1 +1,216 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
+class Item {
+    private String nombre;
+    private int cantidad;
+    private String tipo;
+    private String descripcion;
+    private String ubicacion;
+
+    public Item(String nombre, int cantidad, String tipo,
+                String descripcion, String ubicacion) {
+        this.nombre = nombre;
+        this.cantidad = cantidad;
+        this.tipo = tipo;
+        this.descripcion = descripcion;
+        this.ubicacion = ubicacion;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public int getCantidad() {
+        return cantidad;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public String getUbicacion() {
+        return ubicacion;
+    }
+
+    public String toString() {
+        return nombre + " | Cantidad: " + cantidad
+                + " | Tipo: " + tipo
+                + " | Ubicación: " + ubicacion;
+    }
+}
+
+class InventarioModelo {
+    private List<Item> items = new ArrayList<>();
+
+    public void agregarItem(Item item) {
+        items.add(item);
+    }
+
+    public void eliminarItem(String nombre) {
+        items.removeIf(item -> item.getNombre().equalsIgnoreCase(nombre));
+    }
+
+    public List<Item> getItems() {
+        return items;
+    }
+
+    public Item buscarItem(String nombre) {
+        for (Item item : items) {
+            if (item.getNombre().equalsIgnoreCase(nombre)) {
+                return item;
+            }
+        }
+        return null;
+    }
+}
+
+class InventarioVista {
+    private Scanner scanner = new Scanner(System.in);
+
+    public void menu() {
+        System.out.println("\n===== INVENTARIO =====");
+        System.out.println("1. Agregar item");
+        System.out.println("2. Eliminar item");
+        System.out.println("3. Ver inventario");
+        System.out.println("4. Mostrar detalles");
+        System.out.println("5. Buscar item");
+        System.out.println("6. Salir");
+    }
+
+    public String leer(String mensaje) {
+        System.out.print(mensaje);
+        return scanner.nextLine();
+    }
+
+    public int entero(String mensaje) {
+        return Integer.parseInt(leer(mensaje));
+    }
+
+    public void mostrarInventario(List<Item> items) {
+        if (items.isEmpty()) {
+            System.out.println("El inventario está vacío.");
+            return;
+        }
+
+        System.out.println("\nINVENTARIO");
+
+        for (int i = 0; i < items.size(); i++) {
+            System.out.println((i + 1) + ". " + items.get(i));
+        }
+    }
+
+    public void mostrarDetalles(Item item) {
+        if (item == null) {
+            System.out.println("Item no encontrado.");
+            return;
+        }
+
+        System.out.println("\nDETALLES DEL ITEM");
+        System.out.println("Nombre: " + item.getNombre());
+        System.out.println("Cantidad: " + item.getCantidad());
+        System.out.println("Tipo: " + item.getTipo());
+        System.out.println("Descripción: " + item.getDescripcion());
+        System.out.println("Ubicación: " + item.getUbicacion());
+    }
+
+    public void mensaje(String mensaje) {
+        System.out.println(mensaje);
+    }
+}
+
+class InventarioControlador {
+    private InventarioModelo modelo;
+    private InventarioVista vista;
+
+    public InventarioControlador(InventarioModelo modelo,
+                                 InventarioVista vista) {
+        this.modelo = modelo;
+        this.vista = vista;
+    }
+
+    public void iniciar() {
+        String opcion;
+
+        do {
+            vista.menu();
+            opcion = vista.leer("Seleccione: ");
+
+            switch (opcion) {
+                case "1":
+                    agregarItem();
+                    break;
+                case "2":
+                    eliminarItem();
+                    break;
+                case "3":
+                    vista.mostrarInventario(modelo.getItems());
+                    break;
+                case "4":
+                    mostrarDetalles();
+                    break;
+                case "5":
+                    buscarItem();
+                    break;
+                case "6":
+                    vista.mensaje("Saliendo...");
+                    break;
+                default:
+                    vista.mensaje("Opción no válida.");
+            }
+        } while (!opcion.equals("6"));
+    }
+
+    private void agregarItem() {
+        String nombre = vista.leer("Nombre: ");
+        int cantidad = vista.entero("Cantidad: ");
+        String tipo = vista.leer("Tipo: ");
+        String descripcion = vista.leer("Descripción: ");
+        String ubicacion = vista.leer("Ubicación: ");
+
+        modelo.agregarItem(
+                new Item(nombre, cantidad, tipo, descripcion, ubicacion)
+        );
+
+        vista.mensaje("Item agregado correctamente.");
+    }
+
+    private void eliminarItem() {
+        String nombre = vista.leer("Nombre del item a eliminar: ");
+        modelo.eliminarItem(nombre);
+        vista.mensaje("Operación realizada.");
+    }
+
+    private void mostrarDetalles() {
+        String nombre = vista.leer("Nombre del item: ");
+        Item item = modelo.buscarItem(nombre);
+        vista.mostrarDetalles(item);
+    }
+
+    private void buscarItem() {
+        String nombre = vista.leer("Nombre del item: ");
+        Item item = modelo.buscarItem(nombre);
+
+        if (item != null) {
+            vista.mensaje("Item encontrado: " + item);
+        } else {
+            vista.mensaje("Item no encontrado.");
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        InventarioModelo modelo = new InventarioModelo();
+        InventarioVista vista = new InventarioVista();
+        InventarioControlador controlador =
+                new InventarioControlador(modelo, vista);
+
+        controlador.iniciar();
+    }
+}
